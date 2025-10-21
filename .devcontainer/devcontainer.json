@@ -14,9 +14,10 @@
 		"ms-python.python",
 		"dotjoshjohnson.xml",
 		"ms-azuretools.vscode-docker",
+		"ms-vscode.cpptools-extension-pack",
 		"ms-vscode.cmake-tools",
 		"twxs.cmake",
-		"ms-iot.vscode-ros"
+		"ranch-hand-robotics.rde-pack"
 	],
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// For example, you could install dependencies here.
