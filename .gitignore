@@ -1,1 +1,18 @@
 pub_venues.png
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts that might leak outside workspace
+**/build/
+**/install/
+**/log/
+*.pyc
+__pycache__/
+
+
+# Backup files
+*~
+*.swp
+*.swo

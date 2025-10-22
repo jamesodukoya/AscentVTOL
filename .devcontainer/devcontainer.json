@@ -1,27 +1,66 @@
 {
 	"name": "AscentVTOL Development Environment",
-	"dockerComposeFile": [
-		"../docker-compose.yml"
+	"build": {
+		"dockerfile": "Dockerfile",
+		"args": {
+			"USERNAME": "user",
+			"USER_UID": "1000",
+			"USER_GID": "1000"
+		}
+	},
+	// Container user
+	"remoteUser": "user",
+	"containerUser": "user",
+	// Set the working directory to /home/user
+	"workspaceFolder": "/home/user",
+	// Mount directories
+	"mounts": [
+		// Mount workspace directory for persistent storage
+		"source=${localWorkspaceFolder}/workspace,target=/home/user/workspace,type=bind",
+		// Mount X11 socket for GUI applications
+		"source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind"
 	],
-	// The 'service' property tells VS Code which container to attach to by default.
-	// You can switch between containers using the VS Code command palette.
-	"service": "px4-dev",
-	// The 'workspaceFolder' sets the default directory that VS Code opens.
-	"workspaceFolder": "/home/user/PX4-Autopilot",
-	// List of VS Code extensions to install automatically inside the container.
-	"extensions": [
-		"ms-vscode.cpptools",
-		"ms-python.python",
-		"dotjoshjohnson.xml",
-		"ms-azuretools.vscode-docker",
-		"ms-vscode.cpptools-extension-pack",
-		"ms-vscode.cmake-tools",
-		"twxs.cmake",
-		"ranch-hand-robotics.rde-pack"
+	// Container environment variables
+	"containerEnv": {
+		"DISPLAY": "${localEnv:DISPLAY}",
+		"WORKSPACE_DIR": "/home/user/workspace"
+	},
+	// Run arguments
+	"runArgs": [
+		"--privileged",
+		"--network=host",
+		"--gpus=all"
 	],
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// For example, you could install dependencies here.
-	// "postCreateCommand": "colcon build",
-	// Connect as a non-root user.
-	"remoteUser": "user"
+	// Post-create command - runs after container is created
+	"postCreateCommand": "bash /home/user/.devcontainer/post-create.sh",
+	// VS Code customizations
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"terminal.integrated.profiles.linux": {
+					"bash": {
+						"path": "/bin/bash",
+						"args": [
+							"-l"
+						]
+					}
+				},
+				"files.watcherExclude": {
+					"**/build/**": true,
+					"**/install/**": true,
+					"**/log/**": true
+				},
+				"cmake.configureOnOpen": false,
+				"python.defaultInterpreterPath": "/usr/bin/python3"
+			},
+			"extensions": [
+				"ms-vscode.cpptools",
+				"ms-python.python",
+				"ranch-hand-robotics.rde-pack",
+				"ms-azuretools.vscode-docker",
+				"redhat.vscode-yaml"
+			]
+		}
+	}
 }
