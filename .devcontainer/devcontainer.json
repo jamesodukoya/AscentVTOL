@@ -29,7 +29,9 @@
 	"runArgs": [
 		"--privileged",
 		"--network=host",
-		"--gpus=all"
+		"--gpus=all",
+		"--name",
+		"ascent_vtol"
 	],
 	// Post-create command - runs after container is created
 	"postCreateCommand": "bash /home/user/.devcontainer/post-create.sh",
