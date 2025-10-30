@@ -1,0 +1,9 @@
+# VTOL - Extended state and airspeed critical (refresh rate - Hz)
+mavlink stream -d /dev/ttyS0 -s ATTITUDE -r 100
+mavlink stream -d /dev/ttyS0 -s LOCAL_POSITION_NED -r 50
+mavlink stream -d /dev/ttyS0 -s GLOBAL_POSITION_INT -r 10
+mavlink stream -d /dev/ttyS0 -s VFR_HUD -r 10
+mavlink stream -d /dev/ttyS0 -s EXTENDED_SYS_STATE -r 5
+mavlink stream -d /dev/ttyS0 -s VTOL_STATE -r 5
+mavlink stream -d /dev/ttyS0 -s BATTERY_STATUS -r 5
+mavlink stream -d /dev/ttyS0 -s HEARTBEAT -r 1

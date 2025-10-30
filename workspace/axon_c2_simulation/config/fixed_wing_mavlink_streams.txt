@@ -1,0 +1,8 @@
+# Fixed-Wing - Airspeed and cruise data (refresh rate - Hz)
+mavlink stream -d /dev/ttyS0 -s ATTITUDE -r 50
+mavlink stream -d /dev/ttyS0 -s GLOBAL_POSITION_INT -r 10
+mavlink stream -d /dev/ttyS0 -s VFR_HUD -r 10
+mavlink stream -d /dev/ttyS0 -s WIND_COV -r 5
+mavlink stream -d /dev/ttyS0 -s NAV_CONTROLLER_OUTPUT -r 2
+mavlink stream -d /dev/ttyS0 -s BATTERY_STATUS -r 5
+mavlink stream -d /dev/ttyS0 -s HEARTBEAT -r 1

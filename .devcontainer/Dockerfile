@@ -91,6 +91,7 @@ RUN apt-get update && apt-get install -y \
     shellcheck \
     unzip \
     xsltproc \
+    bc \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Micro-XRCE-DDS-Agent
