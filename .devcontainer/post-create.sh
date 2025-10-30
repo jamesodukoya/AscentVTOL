@@ -148,3 +148,19 @@ EOF
 
 echo "Post-create setup completed successfully!"
 echo "Workspace is ready at /home/user/workspace"
+
+cat <<EOF >> ~/.bashrc
+
+# PX4 Performance Environment Variables
+export PX4_SIM_SPEED_FACTOR=1    # Real-time (can increase for faster testing)
+export PX4_SIM_MODEL=gz_x500     # Default model
+export PX4_NO_LOCKSTEP=1         # Disable lockstep for headless mode
+export GAZEBO_RESOURCE_PATH=/home/user/workspace/PX4-Autopilot/Tools/simulation/gz/models:$GAZEBO_RESOURCE_PATH
+
+# MAVLink performance
+export MAV_SYS_ID=1
+export MAV_BROADCAST=1           # Enable MAVLink UDP broadcasting
+
+# CPU affinity for critical threads (if running on host)
+export PX4_CPUAFFINITY=1         # Pin to specific CPU cores
+EOF
