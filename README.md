@@ -252,7 +252,7 @@ Systematic envelope expansion:
 Located in `/home/user/scripts/`:
 - `build_px4.sh` - Build PX4 firmware
 - `run_px4_sitl.sh` - Launch PX4 SITL simulation
-- `run_xrce_agent.sh` - Start XRCE-DDS Agent
+- `run_xrce_agent.sh` - Start XRCE-DDS Agent (if not initiated automatically)
 - `build_ros2_ws.sh` - Build ROS 2 workspace
 
 ---
