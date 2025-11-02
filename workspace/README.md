@@ -57,4 +57,4 @@ Scripts are located in `/home/user/scripts/`:
 - Gazebo Garden is pre-installed
 - Micro-XRCE-DDS Agent is pre-installed
 
-Github workflow now set up
+Github workflow now set up again
