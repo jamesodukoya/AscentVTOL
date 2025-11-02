@@ -1,0 +1,115 @@
+name: Deploy to Oracle Cloud ARM64
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - '.devcontainer/post-create.sh'
+      - 'workspace/**'
+      - '.github/workflows/deploy-to-oracle.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup SSH key
+        env:
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
+          chmod 600 ~/.ssh/oracle_key
+          ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+      
+      - name: Sync .devcontainer files to Oracle server
+        env:
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          # Sync only post-create.sh (not local Dockerfile)
+          rsync -avz \
+            --exclude='Dockerfile' \
+            --exclude='devcontainer.json' \
+            -e "ssh -i ~/.ssh/oracle_key" \
+            .devcontainer/ \
+            $ORACLE_USER@$ORACLE_HOST:~/AscentVTOL/.devcontainer/
+      
+      - name: Build and deploy container on Oracle
+        env:
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          ssh -i ~/.ssh/oracle_key $ORACLE_USER@$ORACLE_HOST << 'DEPLOY_EOF'
+          set -e
+          cd ~/AscentVTOL
+          
+          # Verify server Dockerfile exists
+          if [ ! -f .devcontainer/Dockerfile.arm64 ]; then
+            echo "ERROR: Dockerfile.arm64 not found on server"
+            exit 1
+          fi
+          
+          # Build Docker image using ARM64 Dockerfile
+          echo "Building Docker image for ARM64..."
+          docker build \
+            -f .devcontainer/Dockerfile.arm64 \
+            -t ascent_vtol:arm64 \
+            --build-arg USERNAME=user \
+            --build-arg USER_UID=1000 \
+            --build-arg USER_GID=1000 \
+            .devcontainer/
+          
+          # Stop and remove existing container
+          docker stop ascent_vtol_container 2>/dev/null || true
+          docker rm ascent_vtol_container 2>/dev/null || true
+          
+          # Run new container with persistent volume
+          echo "Launching container with persistent workspace volume..."
+          docker run -d \
+            --name ascent_vtol_container \
+            -v ~/AscentVTOL/workspace:/home/user/workspace \
+            --privileged \
+            --network=host \
+            ascent_vtol:arm64 \
+            sleep infinity
+          
+          # Execute post-create script inside container
+          echo "Running post-create setup..."
+          docker exec ascent_vtol_container \
+            bash /home/user/.devcontainer/post-create.sh
+          
+          echo "✓ Deployment complete"
+          DEPLOY_EOF
+      
+      - name: Verify deployment status
+        env:
+          ORACLE_SSH_KEY: ${{ secrets.ORACLE_SSH_KEY }}
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          ssh -i ~/.ssh/oracle_key $ORACLE_USER@$ORACLE_HOST << 'VERIFY_EOF'
+          echo "=== Docker Images ==="
+          docker images | grep ascent_vtol
+          
+          echo ""
+          echo "=== Running Containers ==="
+          docker ps | grep ascent_vtol_container
+          
+          echo ""
+          echo "=== Workspace Status ==="
+          ls -lah ~/AscentVTOL/workspace/
+          VERIFY_EOF
+      
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/oracle_key

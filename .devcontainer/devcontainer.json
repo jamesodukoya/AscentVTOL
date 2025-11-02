@@ -12,7 +12,7 @@
 	"remoteUser": "user",
 	"containerUser": "user",
 	// Set the working directory to /home/user
-	"workspaceFolder": "/home/user/workspace",
+	"workspaceFolder": "/home/user",
 	// Mount directories
 	"mounts": [
 		// Mount workspace directory for persistent storage
