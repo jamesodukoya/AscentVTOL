@@ -53,6 +53,9 @@ jobs:
             echo "ERROR: Dockerfile.arm64 not found on server"
             exit 1
           fi
+
+          # Fix workspace ownership for container user (UID 1000)
+          sudo chown -R 1000:1000 ~/AscentVTOL/workspace
           
           echo "Building Docker image for ARM64..."
           docker build \
