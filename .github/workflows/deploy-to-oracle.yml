@@ -28,17 +28,24 @@ jobs:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
         run: ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
       
-      - name: Sync .devcontainer files
+      - name: Sync project files to Oracle server
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
         run: |
+          # Sync .devcontainer (excluding local Dockerfile)
           rsync -avz \
             --exclude='Dockerfile' \
             --exclude='devcontainer.json' \
             -e "ssh" \
             .devcontainer/ \
             $ORACLE_USER@$ORACLE_HOST:~/AscentVTOL/.devcontainer/
+          
+          # Sync workspace directory
+          rsync -avz \
+            -e "ssh" \
+            workspace/ \
+            $ORACLE_USER@$ORACLE_HOST:~/AscentVTOL/workspace/
       
       - name: Build and deploy container on Oracle
         env:
@@ -53,7 +60,7 @@ jobs:
             echo "ERROR: Dockerfile.arm64 not found on server"
             exit 1
           fi
-
+          
           # Fix workspace ownership for container user (UID 1000)
           sudo chown -R 1000:1000 ~/AscentVTOL/workspace
           
@@ -69,6 +76,7 @@ jobs:
           docker stop ascent_vtol_container 2>/dev/null || true
           docker rm ascent_vtol_container 2>/dev/null || true
           
+          echo "Launching container with persistent workspace volume..."
           docker run -d \
             --name ascent_vtol_container \
             -v ~/AscentVTOL/workspace:/home/user/workspace \
@@ -77,6 +85,7 @@ jobs:
             ascent_vtol:arm64 \
             sleep infinity
           
+          echo "Running post-create setup..."
           docker exec ascent_vtol_container \
             bash /home/user/.devcontainer/post-create.sh
           
@@ -97,6 +106,6 @@ jobs:
           docker ps | grep ascent_vtol_container
           
           echo ""
-          echo "=== Workspace Status ==="
+          echo "=== Workspace Contents ==="
           ls -lah ~/AscentVTOL/workspace/
           VERIFY_EOF
