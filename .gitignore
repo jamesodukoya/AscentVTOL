@@ -10,6 +10,13 @@ Thumbs.db
 **/log/
 *.pyc
 __pycache__/
+*.pyo
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+
 
 
 # Backup files
@@ -18,3 +25,8 @@ __pycache__/
 *.swo
 
 resources_guides/
+
+*Dockerfile
+
+# Logs
+*.log
