@@ -28,6 +28,16 @@ jobs:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
         run: ssh-keyscan -H "$ORACLE_HOST" >> ~/.ssh/known_hosts
       
+      - name: Setup workspace directory on server
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          ssh $ORACLE_USER@$ORACLE_HOST << 'SETUP_EOF'
+          mkdir -p ~/AscentVTOL/workspace
+          sudo chown -R $(whoami):$(whoami) ~/AscentVTOL/workspace
+          SETUP_EOF
+      
       - name: Sync project files to Oracle server
         env:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
