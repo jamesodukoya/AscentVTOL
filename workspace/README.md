@@ -56,3 +56,5 @@ Scripts are located in `/home/user/scripts/`:
 - ROS 2 Humble is pre-installed
 - Gazebo Garden is pre-installed
 - Micro-XRCE-DDS Agent is pre-installed
+
+Github workflow now set up
