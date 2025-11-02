@@ -24,6 +24,7 @@ jobs:
           ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
         run: |
+          ssh -vvv $ORACLE_USER@$ORACLE_HOST "echo SSH Connection successful; whoami; pwd"
           mkdir -p ~/.ssh
           echo "$ORACLE_SSH_KEY" > ~/.ssh/oracle_key
           chmod 600 ~/.ssh/oracle_key
