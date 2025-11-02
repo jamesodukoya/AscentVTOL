@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y \
     locales \
     bash-completion \
     software-properties-common \
+    net-tools \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python packages required by PX4
@@ -92,6 +93,7 @@ RUN apt-get update && apt-get install -y \
     unzip \
     xsltproc \
     bc \
+    tcpdump \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Micro-XRCE-DDS-Agent
@@ -104,6 +106,10 @@ RUN cd /tmp && \
     make install && \
     ldconfig /usr/local/lib/ && \
     cd / && rm -rf /tmp/Micro-XRCE-DDS-Agent
+
+RUN pip install pymavlink --break-system-packages && \
+    pip install MAVProxy --break-system-packages && \
+    pip install "numpy<2"
 
 # Create non-root user with sudo privileges
 RUN groupadd --gid $USER_GID $USERNAME \

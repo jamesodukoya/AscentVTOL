@@ -164,3 +164,9 @@ export MAV_BROADCAST=1           # Enable MAVLink UDP broadcasting
 # CPU affinity for critical threads (if running on host)
 export PX4_CPUAFFINITY=1         # Pin to specific CPU cores
 EOF
+
+
+cd ~/workspace/axon_c2_simulation/launch
+chmod +x *
+cd ~/workspace/axon_c2_simulation/scripts
+chmod +x *

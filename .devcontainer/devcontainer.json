@@ -12,7 +12,7 @@
 	"remoteUser": "user",
 	"containerUser": "user",
 	// Set the working directory to /home/user
-	"workspaceFolder": "/home/user",
+	"workspaceFolder": "/home/user/workspace",
 	// Mount directories
 	"mounts": [
 		// Mount workspace directory for persistent storage
@@ -23,7 +23,7 @@
 	// Container environment variables
 	"containerEnv": {
 		"DISPLAY": "${localEnv:DISPLAY}",
-		"WORKSPACE_DIR": "/home/user/workspace"
+		"WORKSPACE_DIR": "/home/user"
 	},
 	// Run arguments
 	"runArgs": [
