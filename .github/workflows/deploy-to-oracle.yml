@@ -99,8 +99,74 @@ jobs:
           docker exec ascent_vtol_container \
             bash /home/user/.devcontainer/post-create.sh
           
-          echo "✓ Deployment complete"
+          echo "✓ Container deployment complete"
           DEPLOY_EOF
+      
+      - name: Stop any existing simulation processes
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          ssh $ORACLE_USER@$ORACLE_HOST << 'STOP_EOF'
+          echo "Stopping any existing simulation processes..."
+          docker exec ascent_vtol_container pkill -f "px4 -i" 2>/dev/null || true
+          docker exec ascent_vtol_container pkill -f commander 2>/dev/null || true
+          docker exec ascent_vtol_container pkill -f spawn_three 2>/dev/null || true
+          sleep 3
+          STOP_EOF
+      
+      - name: Launch perpetual simulation (spawn vehicles)
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          ssh $ORACLE_USER@$ORACLE_HOST << 'SPAWN_EOF'
+          set -e
+          
+          echo "Starting perpetual vehicle simulation..."
+          
+          docker exec -d ascent_vtol_container bash -c "
+            while true; do
+              cd ~/workspace/axon_c2_simulation/launch
+              bash spawn_three_vehicles_sitl.sh
+              echo '[spawn_vehicles] Restarting in 5 seconds...'
+              sleep 5
+            done
+          " > /tmp/spawn_vehicles.log 2>&1 &
+          
+          SPAWN_PID=$!
+          echo "✓ Vehicle spawner started (PID: $SPAWN_PID)"
+          echo "  Log: docker exec ascent_vtol_container tail -f /tmp/spawn_vehicles.log"
+          
+          SPAWN_EOF
+      
+      - name: Wait for vehicles to initialize
+        run: sleep 25
+      
+      - name: Launch perpetual commander
+        env:
+          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
+          ORACLE_USER: ${{ secrets.ORACLE_USER }}
+        run: |
+          ssh $ORACLE_USER@$ORACLE_HOST << 'COMMANDER_EOF'
+          set -e
+          
+          echo "Starting perpetual autonomous commander..."
+          
+          docker exec -d ascent_vtol_container bash -c "
+            while true; do
+              cd ~/workspace/axon_c2_simulation/launch
+              bash commander.sh
+              echo '[commander] Restarting in 5 seconds...'
+              sleep 5
+            done
+          " > /tmp/commander.log 2>&1 &
+          
+          COMMANDER_PID=$!
+          echo "✓ Commander started (PID: $COMMANDER_PID)"
+          echo "  Log: docker exec ascent_vtol_container tail -f /tmp/commander.log"
+          
+          COMMANDER_EOF
       
       - name: Verify deployment
         env:
@@ -108,14 +174,51 @@ jobs:
           ORACLE_USER: ${{ secrets.ORACLE_USER }}
         run: |
           ssh $ORACLE_USER@$ORACLE_HOST << 'VERIFY_EOF'
-          echo "=== Docker Images ==="
-          docker images | grep ascent_vtol
           
           echo ""
-          echo "=== Running Containers ==="
+          echo "=================================="
+          echo "  DEPLOYMENT VERIFICATION"
+          echo "=================================="
+          
+          echo ""
+          echo "=== Docker Container Status ==="
           docker ps | grep ascent_vtol_container
           
           echo ""
-          echo "=== Workspace Contents ==="
-          ls -lah ~/AscentVTOL/workspace/
+          echo "=== PX4 Vehicle Status ==="
+          VEHICLE_COUNT=$(docker exec ascent_vtol_container bash -c "ps aux | grep 'px4 -i' | grep -v grep | wc -l" || echo "0")
+          echo "Running PX4 instances: $VEHICLE_COUNT"
+          
+          echo ""
+          echo "=== Simulation Logs (Latest 5 lines) ==="
+          echo "--- Vehicle 1 ---"
+          docker exec ascent_vtol_container bash -c "tail -2 /tmp/px4_1.log" || echo "Log not available yet"
+          
+          echo ""
+          echo "--- Spawn Vehicles Log ---"
+          docker exec ascent_vtol_container bash -c "tail -2 /tmp/spawn_vehicles.log" || echo "Log not available yet"
+          
+          echo ""
+          echo "--- Commander Log ---"
+          docker exec ascent_vtol_container bash -c "tail -2 /tmp/commander.log" || echo "Log not available yet"
+          
+          echo ""
+          echo "=== Workspace Status ==="
+          ls -lah ~/AscentVTOL/workspace/ | head -12
+          
+          echo ""
+          echo "=================================="
+          echo "  ✓ DEPLOYMENT COMPLETE"
+          echo "=================================="
+          echo ""
+          echo "Monitor simulation:"
+          echo "  docker exec ascent_vtol_container tail -f /tmp/px4_1.log"
+          echo ""
+          echo "Monitor spawner:"
+          echo "  docker exec ascent_vtol_container tail -f /tmp/spawn_vehicles.log"
+          echo ""
+          echo "Monitor commander:"
+          echo "  docker exec ascent_vtol_container tail -f /tmp/commander.log"
+          echo ""
+          
           VERIFY_EOF
