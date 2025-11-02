@@ -22,7 +22,7 @@ echo ""
 # Vehicle 1: Instance 0, UDP port 14540
 echo "Starting Vehicle 1 (Instance 0) - MAVLink UDP 127.0.0.1:14540..."
 HEADLESS=1 \
-  PX4_SYS_AUTOSTART=1001 \
+  PX4_SYS_AUTOSTART=4001 \
   ./build/px4_sitl_default/bin/px4 -i 0 -d > $LOG_DIR/px4_1.log 2>&1 &
 PID1=$!
 
@@ -31,7 +31,7 @@ sleep 2
 # Vehicle 2: Instance 1, UDP port 14541
 echo "Starting Vehicle 2 (Instance 1) - MAVLink UDP 127.0.0.1:14541..."
 HEADLESS=1 \
-  PX4_SYS_AUTOSTART=1001 \
+  PX4_SYS_AUTOSTART=4004 \
   ./build/px4_sitl_default/bin/px4 -i 1 -d > $LOG_DIR/px4_2.log 2>&1 &
 PID2=$!
 
@@ -40,7 +40,7 @@ sleep 2
 # Vehicle 3: Instance 2, UDP port 14542
 echo "Starting Vehicle 3 (Instance 2) - MAVLink UDP 127.0.0.1:14542..."
 HEADLESS=1 \
-  PX4_SYS_AUTOSTART=1001 \
+  PX4_SYS_AUTOSTART=4001 \
   ./build/px4_sitl_default/bin/px4 -i 2 -d > $LOG_DIR/px4_3.log 2>&1 &
 PID3=$!
 
