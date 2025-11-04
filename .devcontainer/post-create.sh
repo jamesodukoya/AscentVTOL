@@ -174,4 +174,4 @@ chmod +x *
 cd ~/workspace/PX4-Autopilot
 
 # Base initialization for all SITL vehicles
-echo "param set SDLOG_MAX_SIZE 500" >> posix-configs/SITL/init/ekf2/rc.defaults
+echo "param set SDLOG_MAX_SIZE 500" >> ROMFS/px4fmu_common/init.d-posix/rcS
