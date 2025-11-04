@@ -170,3 +170,8 @@ cd ~/workspace/axon_c2_simulation/launch
 chmod +x *
 cd ~/workspace/axon_c2_simulation/scripts
 chmod +x *
+
+cd ~/workspace/PX4-Autopilot
+
+# Base initialization for all SITL vehicles
+echo "param set SDLOG_MAX_SIZE 500" >> posix-configs/SITL/init/ekf2/rc.defaults

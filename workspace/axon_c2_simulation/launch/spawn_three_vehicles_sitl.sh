@@ -5,60 +5,101 @@
 
 set -e
 
-PX4_DIR="$HOME/workspace/PX4-Autopilot"
+# Configuration
+PX4_DIR="${HOME}/workspace/PX4-Autopilot"
 LOG_DIR="/tmp"
+NUM_VEHICLES=3
+BASE_PORT=14540
+HEADLESS=1
+PX4_SYS_AUTOSTART=10040
+BUILD_BINARY="./build/px4_sitl_default/bin/px4"
+
+# Validate environment
+if [ ! -d "$PX4_DIR" ]; then
+  echo "❌ Error: PX4_DIR not found: $PX4_DIR"
+  exit 1
+fi
 
 cd "$PX4_DIR" || exit 1
 
-echo "Starting PX4 SITL (SIH simulator)..."
+if [ ! -f "$BUILD_BINARY" ]; then
+  echo "❌ Error: Build binary not found. Run 'make px4_sitl_default' first"
+  exit 1
+fi
+
+# Clean up old rootfs instances to prevent duplication
+echo "🧹 Cleaning up old rootfs instances..."
+rm -rf px4_sitl_default/rootfs/0 px4_sitl_default/rootfs/1 px4_sitl_default/rootfs/2 2>/dev/null || true
+
+# Create log directory
+mkdir -p "$LOG_DIR"
+
+echo "🚀 Starting PX4 SITL Multi-Vehicle Simulation"
 echo ""
 
-# Vehicle 1: Instance 0, MAVLink port 14540
-echo "Starting Vehicle 1 (Instance 0)..."
-HEADLESS=1 \
-  PX4_SYS_AUTOSTART=10040 \
-  ./build/px4_sitl_default/bin/px4 -i 0 -d > $LOG_DIR/px4_1.log 2>&1 &
-PID1=$!
+# Array to store PIDs
+declare -a PIDS
 
-sleep 2
-
-# Vehicle 2: Instance 1, MAVLink port 14541
-echo "Starting Vehicle 2 (Instance 1)..."
-HEADLESS=1 \
-  PX4_SYS_AUTOSTART=10040 \
-  ./build/px4_sitl_default/bin/px4 -i 1 -d > $LOG_DIR/px4_2.log 2>&1 &
-PID2=$!
-
-sleep 2
-
-# Vehicle 3: Instance 2, MAVLink port 14542
-echo "Starting Vehicle 3 (Instance 2)..."
-HEADLESS=1 \
-  PX4_SYS_AUTOSTART=10040 \
-  ./build/px4_sitl_default/bin/px4 -i 2 -d > $LOG_DIR/px4_3.log 2>&1 &
-PID3=$!
+# Start vehicles in a loop
+for i in $(seq 0 $((NUM_VEHICLES - 1))); do
+  PORT=$((BASE_PORT + i))
+  LOG_FILE="$LOG_DIR/px4_$((i+1)).log"
+  
+  echo "   Vehicle $((i+1)) → Instance $i, MAVLink port $PORT"
+  
+  HEADLESS=$HEADLESS \
+    PX4_SYS_AUTOSTART=$PX4_SYS_AUTOSTART \
+    $BUILD_BINARY -i $i -d > "$LOG_FILE" 2>&1 &
+  
+  PIDS[$i]=$!
+  sleep 2
+done
 
 echo ""
 echo "==================================="
-echo "PX4 SITL Multi-vehicle launched!"
+echo "✓ PX4 SITL Multi-Vehicle Launched!"
 echo "==================================="
-echo "Vehicle 1: MAVLink UDP 127.0.0.1:14540 (PID $PID1)"
-echo "Vehicle 2: MAVLink UDP 127.0.0.1:14541 (PID $PID2)"
-echo "Vehicle 3: MAVLink UDP 127.0.0.1:14542 (PID $PID3)"
+
+# Display summary
+for i in $(seq 0 $((NUM_VEHICLES - 1))); do
+  PORT=$((BASE_PORT + i))
+  echo "Vehicle $((i+1)): MAVLink UDP 127.0.0.1:$PORT (PID ${PIDS[$i]})"
+done
+
 echo ""
-echo "Using SIH (Software-in-the-Loop) simulator"
+echo "Simulator: SIH (Software-in-the-Loop)"
 echo "Logs: $LOG_DIR/px4_*.log"
-echo "Tail: docker exec ascent_vtol_container tail -f /tmp/px4_1.log"
-echo "Stop: kill $PID1 $PID2 $PID3"
+echo ""
+echo "Usage:"
+echo "  Tail logs:  tail -f $LOG_DIR/px4_1.log"
+echo "  Stop all:   kill ${PIDS[0]} ${PIDS[1]} ${PIDS[2]}"
 echo "==================================="
+echo ""
 
+# Cleanup function
 cleanup() {
-    echo "Stopping all vehicles..."
-    kill $PID1 $PID2 $PID3 2>/dev/null || true
-    pkill -f "px4 -i" 2>/dev/null || true
-    exit 0
+  echo ""
+  echo "⏹️  Stopping all vehicles..."
+  
+  # Kill all stored PIDs
+  for pid in "${PIDS[@]}"; do
+    if kill -0 "$pid" 2>/dev/null; then
+      kill "$pid" 2>/dev/null || true
+    fi
+  done
+  
+  # Fallback: kill any remaining px4 processes
+  pkill -f "px4 -i" 2>/dev/null || true
+  
+  # Optional: Clean up rootfs after shutdown to save space
+  echo "🧹 Cleaning up rootfs instances..."
+  rm -rf "$PX4_DIR/px4_sitl_default/rootfs/"* 2>/dev/null || true
+  
+  echo "Done."
+  exit 0
 }
 
-trap cleanup SIGINT SIGTERM
+trap cleanup SIGINT SIGTERM EXIT
 
+# Keep script running
 wait

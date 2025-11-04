@@ -30,3 +30,5 @@ resources_guides/
 
 # Logs
 *.log
+
+**/mavlink_monitor/
