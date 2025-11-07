@@ -143,30 +143,6 @@ jobs:
       - name: Wait for vehicles to initialize
         run: sleep 25
       
-      - name: Launch perpetual commander
-        env:
-          ORACLE_HOST: ${{ secrets.ORACLE_HOST }}
-          ORACLE_USER: ${{ secrets.ORACLE_USER }}
-        run: |
-          ssh $ORACLE_USER@$ORACLE_HOST << 'COMMANDER_EOF'
-          set -e
-          
-          echo "Starting perpetual autonomous commander..."
-          
-          docker exec -d ascent_vtol_container bash -c "
-            while true; do
-              cd ~/workspace/axon_c2_simulation/launch
-              bash commander.sh
-              echo '[commander] Restarting in 5 seconds...'
-              sleep 5
-            done
-          " > /tmp/commander.log 2>&1 &
-          
-          COMMANDER_PID=$!
-          echo "✓ Commander started (PID: $COMMANDER_PID)"
-          echo "  Log: docker exec ascent_vtol_container tail -f /tmp/commander.log"
-          
-          COMMANDER_EOF
       
       - name: Verify deployment
         env:

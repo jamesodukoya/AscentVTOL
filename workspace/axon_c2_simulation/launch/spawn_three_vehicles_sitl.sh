@@ -15,7 +15,7 @@ HEADLESS=1
 BUILD_BINARY="./build/px4_sitl_default/bin/px4"
 
 # Different airframes for each vehicle
-AIRFRAMES=(10040 10041 10042)
+AIRFRAMES=(10040 10040 10040)
 
 # Colors
 GREEN='\033[0;32m'
