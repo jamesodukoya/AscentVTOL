@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# PX4 v1.14 Multi-vehicle SITL with CORRECT MAVLink port configuration
-# CRITICAL FIX: Each vehicle sends to its own dedicated port (14540-14542)
-# This prevents data from all vehicles going to port 14540
+# PX4 v1.14 Multi-vehicle SITL with different SIH airframes
+# Simplified approach: Uses PX4's default MAVLink configuration
 
 set -e
 
@@ -10,7 +9,7 @@ set -e
 PX4_DIR="${PX4_DIR:-$HOME/workspace/PX4-Autopilot}"
 LOG_DIR="/tmp/px4_logs"
 NUM_VEHICLES=3
-BASE_PORT=14540  # Each vehicle uses its own port: 14540, 14541, 14542
+BASE_PORT=14540
 HEADLESS=1
 BUILD_BINARY="./build/px4_sitl_default/bin/px4"
 
@@ -25,8 +24,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo "=========================================="
-echo "  PX4 Multi-Instance Launcher v4 (FIXED)"
-echo "  3 Drones - Separate UDP Ports"
+echo "  PX4 Multi-Instance Launcher v2"
+echo "  3 Drones - Different Airframes"
 echo "=========================================="
 echo ""
 
@@ -66,30 +65,14 @@ declare -a PIDS
 for i in $(seq 0 $((NUM_VEHICLES - 1))); do
     AIRFRAME=${AIRFRAMES[$i]}
     PORT=$((BASE_PORT + i))
-    SYSTEM_ID=$((i + 1))
     LOG_FILE="$LOG_DIR/px4_$((i+1)).log"
-    INSTANCE_DIR="$PX4_DIR/build/px4_sitl_default/instance_$i"
     
     echo -e "${GREEN}[Drone $((i+1))] Starting instance $i${NC}"
-    echo -e "  System ID: $SYSTEM_ID"
     echo -e "  Airframe: $AIRFRAME"
-    echo -e "  MAVLink Port: $PORT (dedicated)"
-    
-    # Create instance directory and MAVLink config
-    mkdir -p "$INSTANCE_DIR/etc"
-    
-    # CRITICAL FIX: Configure MAVLink to use the correct port for THIS vehicle
-    # The -u flag specifies the UDP port to send data TO
-    # The -p flag enables bidirectional communication
-    # Each instance MUST use a different port (14540 + instance number)
-#     cat > "$INSTANCE_DIR/etc/extras.txt" << EOF
-# # MAVLink Configuration for Instance $i
-# # CRITICAL: Send data to dedicated port $PORT (not 14540 for all!)
-# # This ensures each dashboard connection receives data from only ONE vehicle
-# mavlink start -x -u $PORT -r 4000000 -m onboard -p
-# EOF
+    echo -e "  Port: $PORT"
     
     # Start PX4 instance
+    # PX4 will automatically create MAVLink on port BASE_PORT + i
     HEADLESS=$HEADLESS \
         PX4_SIM_MODEL=sih \
         PX4_SYS_AUTOSTART=$AIRFRAME \
@@ -131,32 +114,28 @@ echo "Configuration:"
 for i in $(seq 0 $((NUM_VEHICLES - 1))); do
     AIRFRAME=${AIRFRAMES[$i]}
     PORT=$((BASE_PORT + i))
-    SYSTEM_ID=$((i + 1))
     echo ""
-    echo "  Drone $((i+1)) (Instance $i, System ID $SYSTEM_ID): PID ${PIDS[$i]}"
+    echo "  Drone $((i+1)) (Instance $i): PID ${PIDS[$i]}"
     echo "    Airframe: $AIRFRAME"
-    echo "    MAVLink Port: $PORT (DEDICATED - not shared!)"
+    echo "    MAVLink: udp://127.0.0.1:$PORT"
     echo "    Log: /tmp/px4_logs/px4_$((i+1)).log"
 done
 
 echo ""
-echo -e "${YELLOW}CRITICAL FIX APPLIED:${NC}"
-echo "  ✓ Each vehicle now sends to its OWN port (14540, 14541, 14542)"
-echo "  ✓ Previous bug: All vehicles sent to port 14540"
-echo "  ✓ Dashboard connections now receive correct data per drone"
-echo ""
 echo -e "${YELLOW}Important Notes:${NC}"
 echo "  • Wait 20-30 seconds for full initialization"
-echo "  • Each vehicle uses a SEPARATE port (no data mixing)"
-echo "  • Dashboard should now show correct data for all 3 drones"
+echo "  • MAVLink servers run on ports 14540-14542"
+echo "  • Connect using: udp:127.0.0.1:14540 (not udpin!)"
 echo ""
-echo -e "${BLUE}Verify Configuration:${NC}"
-echo "  Check MAVLink config: grep 'mavlink start' /tmp/px4_logs/px4_*.log"
-echo "  Monitor logs: tail -f /tmp/px4_logs/px4_1.log"
+echo -e "${BLUE}Next Steps:${NC}"
+echo "  1. Wait 20 more seconds"
+echo "  2. Test: python3 test_connections.py"
+echo "  3. Run: python3 autonomous_flight_fixed.py"
 echo ""
 echo -e "${YELLOW}Troubleshooting:${NC}"
+echo "  Monitor logs: tail -f /tmp/px4_logs/px4_1.log"
 echo "  Stop all: pkill -9 px4"
-echo "  If data still wrong, check extras.txt files in instance_* dirs"
+echo "  Check MAVLink: grep -i mavlink /tmp/px4_logs/px4_1.log"
 echo ""
 echo "Press Ctrl+C to stop all instances"
 echo ""
