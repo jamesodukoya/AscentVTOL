@@ -13,7 +13,7 @@ ALT_MAX_M=80           # Stay well under 120m vertical limit
 VELOCITY_MPS=5
 
 echo "=== Fixed Commander (Correct UDP Method) ==="
-echo "=== Multi-Vehicle Commander ==="
+echo "==== Multi-Vehicle Commander ===="
 echo "Handling different arming sequences for each vehicle type"
 echo "Waypoints: ${WAYPOINT_RADIUS_M}m radius, ${ALT_MAX_M}m altitude"
 echo "Press Ctrl+C to stop"
